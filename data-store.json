@@ -1,0 +1,54 @@
+{
+  "progress": {
+    "topicMastery": {
+      "organic": 72,
+      "inorganic": 65,
+      "physical": 58,
+      "analytical": 48,
+      "spectroscopy": 42,
+      "quantum": 35,
+      "electrochemistry": 60,
+      "thermodynamics": 55,
+      "kinetics": 68,
+      "coordination": 62,
+      "biochemistry": 50,
+      "polymer": 30,
+      "environmental": 45,
+      "laboratory": 70,
+      "numerical": 52,
+      "mechanism": 75,
+      "structure_id": 40
+    },
+    "questionsCount": 17,
+    "topicsCompleted": [
+      "SN1 / SN2 Kinetics",
+      "Crystal Field Splitting",
+      "Acid-Base Titration Curves"
+    ],
+    "quizScores": [
+      {
+        "id": "q1",
+        "date": "Yesterday",
+        "topic": "Organic Chemistry",
+        "score": 8,
+        "total": 10
+      },
+      {
+        "id": "q2",
+        "date": "2 days ago",
+        "topic": "Physical Chemistry",
+        "score": 7,
+        "total": 10
+      }
+    ],
+    "weakTopics": [
+      "Molecular Orbital Theory (Heteronuclear)",
+      "13C-NMR DEPT-135 interpretation"
+    ],
+    "streakDays": 4,
+    "examReadinessScore": 68
+  },
+  "customFlashcards": [],
+  "savedNotes": [],
+  "chatSessions": []
+}

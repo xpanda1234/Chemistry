@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Safe touch scrolling on mobile devices */
+  .touch-pan-x {
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .touch-pan-y {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Ensure KaTeX renders smoothly and scrolls on mobile without clipping */
+.katex-display {
+  margin: 0.5em 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 0.25rem !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.katex {
+  font-size: 1.05em !important;
+  text-rendering: auto;
+}
+
+/* Base mobile touch optimization */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
