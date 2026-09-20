@@ -348,19 +348,19 @@ ${structured.examStyleQuestion || structured.practiceQuestion || 'N/A'}
         body: JSON.stringify({
           prompt: searchQuery,
           mode: 'learn',
-          academicLevel,
+          level: academicLevel,
         }),
       });
 
       const data = await res.json();
-      if (data && data.message) {
+      if (data && data.structured) {
         const newMsg: ChatMessage = {
           id: `search-${Date.now()}`,
           sender: 'professor',
-          text: searchQuery,
+          text: data.structured.conceptSummary || searchQuery,
           timestamp: 'Just now',
           mode: 'learn',
-          structured: data.message.structured,
+          structured: data.structured,
         };
         setActiveAnswer(newMsg);
         if (onSelectAnswer) {
@@ -758,6 +758,8 @@ ${structured.examStyleQuestion || structured.practiceQuestion || 'N/A'}
                   diagram={structured?.diagram}
                   mechanismSteps={structured?.mechanismSteps}
                   topic={structured?.topic || 'organic'}
+                  onAskInMainChat={(q) => onAskFollowUp(q)}
+                  onAddFlashcard={onAddFlashcard}
                 />
               </div>
             </section>

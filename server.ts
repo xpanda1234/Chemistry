@@ -5,6 +5,7 @@ import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { UNIVERSITY_EXAM_BSC } from './src/data/chemistryKnowledge.ts';
+import { generateUniversalChemistryAnswer, answerDiagramQuestion } from './src/data/chemistryEngine.ts';
 
 dotenv.config();
 
@@ -42,7 +43,7 @@ async function callGeminiResiliently(
   params: GeminiCallParams
 ): Promise<string> {
   // Ordered candidate models: high-throughput lightweight model first, then standard flash models
-  const candidateModels = ['gemini-3.1-flash-lite', 'gemini-flash-latest', 'gemini-3.8-flash'];
+  const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite', 'gemini-3.1-pro-preview'];
   let lastError: any = null;
 
   for (const model of candidateModels) {
@@ -165,41 +166,48 @@ function persistDB() {
 }
 
 // System prompt enforcing Senior Chemistry Professor persona & progressive pedagogy
-const PROFESSOR_SYSTEM_INSTRUCTION = `You are a distinguished Senior Professor of Chemistry (specializing in Organic, Physical, Inorganic, Analytical, and Quantum Chemistry) at a premier research university.
-You are teaching undergraduate (B.Sc.) and graduate/postgraduate (M.Sc./Ph.D.) chemistry students.
+const PROFESSOR_SYSTEM_INSTRUCTION = `You are a distinguished Senior Professor of Chemistry (holding Chairs in Organic, Physical, Inorganic, Analytical, and Quantum Chemistry) and the Chief Academic Architect of the CHEMIA University Platform.
+You are instructing undergraduate (B.Sc.), graduate (B.Sc. Final / B.S.), and postgraduate (M.Sc. / Ph.D.) chemistry students.
 
-MAIN TEACHING PHILOSOPHY & PROGRESSIVE DISCLOSURE:
-1. Always classify the question into:
-   - Topic: Organic Chemistry | Inorganic Chemistry | Physical Chemistry | Analytical Chemistry | Biochemistry | Spectroscopy | Quantum Chemistry | Electrochemistry | Thermodynamics | Chemical Kinetics | Coordination Chemistry | Polymer Chemistry | Environmental Chemistry | Laboratory Chemistry | Numerical Problem | Reaction Mechanism | Structure Identification
-   - Level: Undergraduate (B.Sc.) | Graduate (B.Sc. Final / B.S.) | Postgraduate (M.Sc. / Ph.D.)
-   - Question Type: Reaction Mechanism | Numerical Problem | Conceptual Theory | Structure Identification | Spectroscopy Interpretation | Laboratory Chemistry | Thermodynamics & Kinetics | Coordination & Quantum
-2. Explain progressively:
-   - Step 1: Simple concept (accessible, intuitive foundation)
-   - Step 2: Core theory (rigorous physical chemistry principles, orbital overlap, thermodynamics)
-   - Step 3: Detailed explanation (molecular level detail, stereochemistry, solvent effects, rate laws)
-   - Step 4: Chemical Equation / Reaction (LaTeX formatted: \\Delta G = \\Delta H - T\\Delta S, or complete balanced chemical equations with states)
-   - Step 5: Diagram specification (define one of: 'mechanism', 'energy', 'cft', 'mo', 'titration', 'molecule3d', 'spectroscopy' with structured steps or coordinates)
-   - Step 6: Worked Example / Application
-   - Step 7: Practice Question + Exam-Style Question
-   - Step 8: Academic Sources / References (cite March's Advanced Organic, Atkins' Physical Chemistry, Huheey/Miessler Inorganic, Silverstein Spectroscopy)
-   - Step 9: Safety Considerations (PPE, hazards, proper institutional laboratory protocols; avoid unsafe casual home mixing)
+PROFESSIONAL DEMEANOR & PEDAGOGICAL PHILOSOPHY:
+1. Unfailing Academic Professionalism:
+   - Speak with scholarly eloquence, authoritative scientific rigor, pedagogical warmth, and precision.
+   - Never provide casual, dismissive, vague, or truncated one-line responses. Every explanation must read like an award-winning university lecture and comprehensive reference text.
+   - Use precise IUPAC terminology, standard thermodynamic state symbols, frontier molecular orbital descriptors, and exact mathematical nomenclature.
+
+2. Scope of Inquiries & Multi-Domain Mastery:
+   - For Chemistry Questions (Organic, Inorganic, Physical, Analytical, Quantum, Spectroscopy, Biochemistry, Electrochemistry, Kinetics, Thermodynamics, Coordination Chemistry):
+     Provide exhaustive university-grade explanations connecting microscopic orbital electron flow, thermodynamic feasibility (ΔG, ΔH, ΔS), kinetic barrier profiles, and spectroscopic verification.
+   - For Relatable Questions About CHEMIA & Chemistry Study Methodologies:
+     Provide an articulate, masterclass-level guide to the CHEMIA ecosystem (24/7 AI Professor Chat with 5 modes, Full-Screen AI Answer Monographs, Dynamic Diagram Suite with Point-and-Ask Hotspot Inquiries, Real-Time 3D Molecular Orbital Viewer, University Exam Simulator, Viva Voce Oral Defense Suite, and Spaced-Repetition Active Recall Flashcards). Guide the student on how to organize active recall, interrogate potential energy surfaces, and prepare for university examinations.
+
+3. Progressive Disclosure Structure:
+   - Step 1: Executive Concept Summary (crystal-clear, authoritative formal definition)
+   - Step 2: Core Theory (rigorous physical chemistry principles, orbital overlap/symmetry, thermodynamics, state functions)
+   - Step 3: Detailed Explanation (molecular-level mechanics, stereochemical trajectory, solvent dielectric effects, rate laws)
+   - Step 4: Chemical Equation / Reaction (LaTeX formatted: \\Delta G = \\Delta H - T\\Delta S, or complete balanced chemical equations with phase states)
+   - Step 5: Diagram Specification (define one of: 'mechanism', 'energy', 'cft', 'mo', 'titration', 'molecule3d', 'spectroscopy', 'galvanic' with structured coordinates or subType)
+   - Step 6: Worked Example / Real-World Application (industrial catalysis, pharmaceutical API synthesis, biological electron transport)
+   - Step 7: Practice Question + University Exam-Style Question with Marks Allocation [e.g. 5–10 Marks]
+   - Step 8: Academic Sources / References (cite March's Advanced Organic, Atkins' Physical Chemistry, Huheey/Miessler Inorganic, Silverstein Spectroscopy, Skoog Analytical)
+   - Step 9: Laboratory Safety & Environmental Protocol (PPE, OSHA/ACS regulations, fume hood usage, hazardous waste neutralization)
 
 FOR NUMERICAL PROBLEMS:
-Format with strict discipline:
-- Given: [List values with units]
-- Required: [Explicit target quantity]
-- Formula: [LaTeX equation]
+Format with strict academic discipline:
+- Given: [List values with standard SI/chem units]
+- Required: [Explicit target physical quantity]
+- Formula: [KaTeX equation]
 - Units & Significant Figures Check
-- Substitution: [Direct plug-in]
-- Calculation: [Intermediate steps]
-- Final Answer: [Value + units in bold]
+- Substitution: [Direct step-by-step plug-in]
+- Calculation: [Intermediate arithmetic operations]
+- Final Answer: [Exact numerical value + units in bold]
 - Physical Interpretation & Assumptions (e.g. ideal gas behavior, infinite dilution, activity coefficient approx 1)
 
 FOR REACTION MECHANISMS:
 Break down step-by-step:
 - Step title, description, reactant, reagent/condition, curved electron arrow notes, intermediate/product structure, and key stereochemical/energetic feature.
 
-Always output response strictly as a JSON object matching the requested schema.`;
+Always output response strictly as a valid JSON object matching the requested schema.`;
 
 // --- API ROUTES ---
 
@@ -211,7 +219,8 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Chat endpoint
 app.post('/api/chat', async (req: Request, res: Response) => {
   try {
-    const { prompt, mode = 'learn', level = 'Graduate (B.Sc. Final / B.S.)', history = [] } = req.body;
+    const { prompt, mode = 'learn', level, academicLevel, history = [] } = req.body;
+    const effectiveLevel = level || academicLevel || 'Graduate (B.Sc. Final / B.S.)';
 
     if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -232,7 +241,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           ? 'Provide research-grade rigor with explicit boundary conditions, experimental limitations, spectroscopic validation techniques, and authoritative academic citations.'
           : 'Provide a structured, step-by-step pedagogical explanation matching the 9 progressive teaching steps.';
 
-      const userMessage = `Academic Level: ${level}\nMode: ${mode}\nMode Directive: ${modeInstruction}\nStudent Question: "${prompt}"\n\nPlease structure your response as a valid JSON object matching this schema:
+      const userMessage = `Academic Level: ${effectiveLevel}\nMode: ${mode}\nMode Directive: ${modeInstruction}\nStudent Question: "${prompt}"\n\nPlease structure your response as a valid JSON object matching this schema:
 {
   "topic": "string (e.g. organic, inorganic, physical, analytical, spectroscopy, quantum, etc.)",
   "topicLabel": "string (e.g. Organic Chemistry, Coordination Chemistry, etc.)",
@@ -287,7 +296,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           temperature: 0.2,
         });
 
-        const parsed = JSON.parse(responseText || '{}');
+        const raw = (responseText || '').trim();
+        const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleaned || '{}');
         dbData.progress.questionsCount += 1;
         persistDB();
         return res.json({ success: true, structured: parsed });
@@ -326,6 +337,86 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     } catch {
       res.status(500).json({ error: error.message || 'Internal chemistry server error' });
     }
+  }
+});
+
+// Dedicated Diagram Q&A endpoint: Answers student questions specifically about the diagram
+app.post('/api/diagram-qa', async (req: Request, res: Response) => {
+  try {
+    const {
+      question,
+      diagramType = 'mechanism',
+      diagramTitle = 'Chemical Visualizer',
+      diagramData = {},
+      selectedComponent = '',
+      academicLevel = 'Graduate (B.Sc. Final / B.S.)',
+      topic = 'general',
+    } = req.body;
+
+    if (!question || typeof question !== 'string') {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    const ai = getGeminiClient();
+
+    if (ai) {
+      const prompt = `You are a distinguished University Chemistry Professor answering a student's question directly and specifically about an interactive diagram rendered in front of them.
+
+Diagram Context:
+- Diagram Type: ${diagramType}
+- Diagram Title: "${diagramTitle}"
+- Selected Component/Region: "${selectedComponent || 'Entire Diagram'}"
+- Academic Level: ${academicLevel}
+- Specific Diagram Data/Parameters: ${JSON.stringify(diagramData)}
+
+Student's Question About This Diagram:
+"${question}"
+
+Instruction:
+Provide a rigorous, mathematically and mechanistically precise explanation that explicitly references the visual features of this diagram (the axes, transition states, curves, orbitals, electron flow arrows, peak shifts, or half-cells).
+Return strictly valid JSON with this schema:
+{
+  "question": "string",
+  "diagramType": "string",
+  "referencedComponent": "string (the specific visual element, coordinate point, or peak being discussed)",
+  "directAnswer": "string (concise, high-yield direct answer)",
+  "detailedExplanation": "string (in-depth physical/chemical mechanism referencing diagram features)",
+  "equationLatex": "string (LaTeX mathematical formula or equilibrium expression)",
+  "examTips": "string (key terms and grading criteria university professors expect in exam answers)",
+  "keyTakeaways": ["string", "string", "string"]
+}`;
+
+      try {
+        const responseText = await callGeminiResiliently(ai, {
+          contents: prompt,
+          systemInstruction: 'You are a rigorous, award-winning Chemistry Professor specializing in diagrammatic and mechanistic chemical pedagogy.',
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        });
+
+        const cleaned = (responseText || '').trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleaned);
+        return res.json({ success: true, answer: parsed });
+      } catch (geminiErr: any) {
+        console.log('[Diagram QA] Gemini busy, serving via institutional diagram pedagogy engine');
+      }
+    }
+
+    // Instant fallback via institutional diagram answer engine
+    const answer = answerDiagramQuestion({
+      question,
+      diagramType,
+      diagramTitle,
+      diagramData,
+      selectedComponent,
+      academicLevel,
+      topic,
+    });
+
+    return res.json({ success: true, answer });
+  } catch (err: any) {
+    console.error('Error in /api/diagram-qa:', err);
+    res.status(500).json({ error: err.message || 'Error processing diagram question' });
   }
 });
 
@@ -570,6 +661,10 @@ app.post('/api/flashcards', (req: Request, res: Response) => {
 
 // Helper: Intelligent Fallback Generator for Professor Answers
 function generateIntelligentProfessorFallback(prompt: string, mode: string, level: string) {
+  return generateUniversalChemistryAnswer(prompt, mode, level as any);
+}
+
+function _legacyFallback(prompt: string, mode: string, level: string) {
   const lower = prompt.toLowerCase();
 
   // Check for SN1 / Substitution

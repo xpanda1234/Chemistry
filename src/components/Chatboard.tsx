@@ -56,48 +56,56 @@ const resolveEffectiveDiagram = (structured?: StructuredProfessorAnswer, promptT
     return {
       type: 'spectroscopy',
       title: 'Diagnostic Combined FTIR & 1H-NMR Spectrum',
-      data: {},
+      data: { subType: 'diagnostic' },
     };
   }
   if (text.includes('nernst') || text.includes('galvanic') || text.includes('daniell') || text.includes('redox') || text.includes('half-cell') || text.includes('cell potential') || topic === 'electrochemistry') {
     return {
       type: 'galvanic',
       title: 'Galvanic (Voltaic) Daniell Cell & Electron Flow',
-      data: {},
+      data: { subType: 'daniell', anode: 'Zn', cathode: 'Cu' },
     };
   }
   if (text.includes('orbital') || text.includes('homo') || text.includes('lumo') || text.includes('paramagnet') || text.includes('bond order') || text.includes('mo theory') || text.includes('mo diagram') || topic === 'quantum') {
+    const isN2 = text.includes('n2') || text.includes('nitrogen');
     return {
       type: 'mo',
-      title: 'Molecular Orbital (MO) Energy Level Diagram',
-      data: {},
+      title: isN2 ? 'Diatomic N₂ Molecular Orbital Diagram (sp-Mixing)' : 'Diatomic O₂ Molecular Orbital Diagram & Paramagnetism',
+      data: { subType: isN2 ? 'n2' : 'o2', molecule: isN2 ? 'N₂' : 'O₂' },
     };
   }
-  if (text.includes('crystal field') || text.includes('cft') || text.includes('octahedral') || text.includes('tetrahedral') || text.includes('coordination') || topic === 'coordination' || topic === 'inorganic') {
+  if (text.includes('crystal field') || text.includes('cft') || text.includes('octahedral') || text.includes('tetrahedral') || text.includes('coordination') || text.includes('jahn teller') || topic === 'coordination' || topic === 'inorganic') {
+    const isJT = text.includes('jahn teller') || text.includes('cu2+') || text.includes('cu(ii)') || text.includes('d9');
     return {
       type: 'cft',
-      title: 'Crystal Field Theory (CFT) d-Orbital Splitting',
-      data: {},
+      title: isJT
+        ? 'Jahn-Teller Tetragonal (D₄h) Distortion in d⁹ [Cu(H₂O)₆]²⁺'
+        : 'Octahedral Crystal Field Theory (Oh) d-Orbital Splitting & Δo',
+      data: { subType: isJT ? 'jahn_teller' : 'octahedral' },
     };
   }
   if (text.includes('titrat') || text.includes('buffer') || text.includes('ph ') || text.includes('neutraliz') || topic === 'analytical') {
+    const isStrong = text.includes('strong acid') || text.includes('hcl');
     return {
       type: 'titration',
-      title: 'Acid-Base Titration & Neutralization Curve',
-      data: {},
+      title: isStrong
+        ? 'Strong Acid (HCl) vs Strong Base (NaOH) Titration Curve'
+        : 'Weak Acid (CH₃COOH) vs Strong Base (NaOH) Titration Curve',
+      data: { subType: isStrong ? 'strong_acid' : 'weak_acid' },
     };
   }
   if (structured?.mechanismSteps && structured.mechanismSteps.length > 0) {
     return {
       type: 'mechanism',
       title: 'Organic Reaction Mechanism & Electron Flow',
-      data: {},
+      data: { subType: 'steps' },
     };
   }
+  const isSn2 = text.includes('sn2') || text.includes('walden');
   return {
     type: 'energy',
-    title: 'Reaction Coordinate & Activation Energy Profile',
-    data: {},
+    title: isSn2 ? 'Concerted Single-Barrier Energy Profile (SN2 Walden Inversion)' : 'Reaction Coordinate & Activation Energy Profile',
+    data: { subType: isSn2 ? 'sn2' : 'sn1' },
   };
 };
 
@@ -324,9 +332,10 @@ export const Chatboard: React.FC<ChatboardProps> = ({
     'Explain the mechanism of SN1 vs SN2 with curved arrows and stereochemistry',
     'Why does benzene undergo electrophilic substitution rather than addition?',
     'Explain Crystal Field Theory (CFT) and calculate CFSE for octahedral d6',
-    'What is entropy and how is it defined thermodynamically?',
+    'How do I use CHEMIA to prepare for university chemistry exams?',
     'Calculate the pH of 0.050 M acetic acid (Ka = 1.8 × 10⁻⁵)',
     'Explain 1H-NMR spin-spin splitting and the (n+1) rule',
+    'What is the most effective study strategy for mastering organic mechanisms?',
   ];
 
   return (
@@ -567,6 +576,8 @@ export const Chatboard: React.FC<ChatboardProps> = ({
                         diagram={resolveEffectiveDiagram(msg.structured, msg.text)}
                         mechanismSteps={msg.structured.mechanismSteps}
                         topic={msg.structured.topic}
+                        onAskInMainChat={(q) => handleSendMessage(q)}
+                        onAddFlashcard={onAddFlashcard}
                       />
                     </div>
                   )}

@@ -58,7 +58,26 @@ export interface NumericalBreakdown {
 export interface DiagramPayload {
   type: 'mechanism' | 'energy' | 'cft' | 'mo' | 'titration' | 'molecule3d' | 'spectroscopy' | 'galvanic' | 'electrochemistry';
   title: string;
-  data?: any;
+  subtitle?: string;
+  data?: {
+    subType?: string;
+    system?: string;
+    molecule?: string;
+    details?: Record<string, any>;
+    customLabels?: Record<string, string>;
+    [key: string]: any;
+  };
+}
+
+export interface DiagramQAAnswer {
+  question: string;
+  diagramType: string;
+  referencedComponent?: string;
+  directAnswer: string;
+  detailedExplanation: string;
+  equationLatex?: string;
+  examTips?: string;
+  keyTakeaways?: string[];
 }
 
 export interface StructuredProfessorAnswer {
